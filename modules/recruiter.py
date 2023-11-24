@@ -95,7 +95,7 @@ def sort_applicants(table):
 
         cur = mycon.cursor()
         cur.execute(
-            f'SELECT job.JobRole, candidate.CName, candidate.CEmail, candidate.CAge, candidate.CLocation, candidate.CGender, candidate.CExp, candidate.CSkills, candidate.CQualification FROM application JOIN candidate ON application.cid=candidate.CID JOIN job ON job.jid=application.jid where job.rid={recid} order by {criteria}')
+            f'SELECT job.JobRole, client.CName, client.CEmail, client.CAge, client.CLocation, client.CGender, client.CExp, client.CSkills, client.CQualification FROM application JOIN client ON application.cid=client.CID JOIN job ON job.jid=application.jid where job.rid={recid} order by {criteria}')
         applicats = cur.fetchall()
         mycon.close()
         print(applicats)
@@ -129,7 +129,7 @@ def show_applicants(table):
                         passwd=user_pwd, database='mydb')
     cur = mycon.cursor()
     cur.execute(
-        f'SELECT job.JobRole, candidate.CName, candidate.CEmail, candidate.CAge, candidate.CLocation, candidate.CGender, candidate.CExp, candidate.CSkills, candidate.CQualification FROM application JOIN candidate ON application.cid=candidate.CID JOIN job ON job.jid=application.jid where job.rid={recid}')
+        f'SELECT job.JobRole, client.CName, client.CEmail, client.CAge, client.CLocation, client.CGender, client.CExp, client.CSkills, client.CQualification FROM application JOIN client ON application.cid=client.CID JOIN job ON job.jid=application.jid where job.rid={recid}')
     applicats = cur.fetchall()
     mycon.close()
     print(applicats)
@@ -322,19 +322,44 @@ def app():
     table.column("CQualification", width=150)
     show_applicants(table)
     table.pack(fill="both", expand=1)
+#-----------------------------------------------------------------
+def calculate_average_salary():
+    try:
+        mycon = sql.connect(host='localhost', user='root',
+                        passwd=user_pwd, database='mydb')
+        cur = mycon.cursor()
 
+        # Call the stored function to calculate average salary for the recruiter
+        cur.execute(f'SELECT CalculateAverageSalary({recid}) AS AverageSalary FROM DUAL')
+
+
+        result = cur.fetchone()
+
+        # Display the result using a messagebox
+        if result:
+            avg_salary = result[0]
+            messagebox.showinfo("Result", f"The average salary for your posted jobs is: {avg_salary:.2f}")
+        else:
+            messagebox.showinfo("Result", "No data found for your posted jobs")
+
+    except sql.Error as e:
+        print(f"Database error: {e}")
+        messagebox.showerror("Error", "An error occurred while connecting to the database")
+
+    finally:
+        if mycon.is_connected():
+            mycon.close()
 
 # ---------------------------------------------------------------------------------------------------------------------------
 def rec(root, email1):
     global email
     email = email1
-    bg = Frame(root, width=1050, height=700)
+    bg = Frame(root, width=1050, height=500)
     bg.place(x=0, y=0)
 
     get_details(email)
 
-    bg.load = PhotoImage(file=f'elements\\bg{gen}.
-                         ')
+    bg.load = PhotoImage(file=f'elements\\bg{gen}.png')
     img = Label(root, image=bg.load)
     img.place(x=0, y=0)
 
@@ -351,16 +376,19 @@ def rec(root, email1):
 
     # Left
     lf = Frame(root, width=330, height=440, bg="#ffffff")
-    lf.place(x=60, y=220)
+    lf.place(x=60, y=200)  # Adjusted the y-coordinate to avoid overlap
+
     cj = Button(lf, text="Post a Job", font=(
         'normal', 20), bg="#b32e2e", fg="#ffffff", command=create)
-    cj.grid(row=0, column=0, padx=80, pady=40)
+    cj.grid(row=0, column=0, padx=50, pady=20)
     pj = Button(lf, text="Posted Jobs", font=(
         'normal', 20), bg="#b32e2e", fg="#ffffff", command=posted)
-    pj.grid(row=1, column=0, padx=80, pady=40)
+    pj.grid(row=1, column=0, padx=50, pady=20)
+    avg_salary_btn = Button(lf, text="Average Salary", font=('normal', 20), bg="#b32e2e", fg="#ffffff", command=calculate_average_salary)
+    avg_salary_btn.grid(row=2, column=0, padx=50, pady=20)
     ap = Button(lf, text="Applications", font=(
         'normal', 20), bg="#b32e2e", fg="#ffffff", command=app)
-    ap.grid(row=2, column=0, padx=80, pady=40)
+    ap.grid(row=3, column=0, padx=50, pady=20)
 
     # Right
     global rt, tab, bgr
